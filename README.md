@@ -28,7 +28,7 @@ $ python manage.py migrate
 Run web server locally:
 
 ```bash
-$ python manage.py runserver --settings=settings.local
+$ python manage.py runserver
 ```
 
 Happy Coding!
