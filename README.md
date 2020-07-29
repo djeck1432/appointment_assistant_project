@@ -41,10 +41,14 @@ Some of the project settings are taken from environment variables.
 
 There are variables available:
 
-DJANGO_DEVELOPMENT_SERVER - Set to True when developing locally
+SECRET_KEY - project secret key. Required for local and production.
 
-```bash
-$ export DJANGO_DEVELOPMENT_SERVER=True
-```
+DEBUG - Set 'TRUE' for local development.
 
-SECRET_KEY - project secret key. Must be specified in production environment.
+HOST_URL - Url host. Required to production.
+
+DB_ENGINE - Type of database. Required to production.
+
+DB_NAME - Database name. Required to production.
+
+

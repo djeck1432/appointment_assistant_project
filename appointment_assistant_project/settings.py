@@ -44,6 +44,25 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'appointment_assistant_project.urls'
 
+HOST_URL = os.environ.get('HOST_URL')
+ALLOWED_HOSTS = [
+    HOST_URL if HOST_URL else '127.0.0.1'
+]
+
+DEBUG = os.environ.get('DEBUG') == 'TRUE'
+
+
+DB_ENGINE = os.environ.get('DB_ENGINE')
+DB_NAME = os.environ.get('DB_NAME')
+DATABASES = {
+    'default': {
+        'ENGINE': DB_ENGINE if DB_ENGINE else 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, DB_NAME if DB_NAME else 'db.sqlite3'),
+    }
+}
+
+SECRET_KEY = os.environ.get('SECRET_KEY')
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

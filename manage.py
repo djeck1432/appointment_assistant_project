@@ -6,11 +6,10 @@ import sys
 
 def main():
 
-    develop_mode = os.environ.get('DJANGO_DEVELOPMENT_SERVER')
-    if develop_mode:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.local')
-    else:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.production')
+    os.environ.setdefault(
+        'DJANGO_SETTINGS_MODULE',
+        'appointment_assistant_project.settings',
+    )
 
     try:
         from django.core.management import execute_from_command_line
