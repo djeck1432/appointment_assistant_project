@@ -11,6 +11,12 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from environs import Env
+
+
+env = Env()
+env.read_env()
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -45,24 +51,19 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'appointment_assistant_project.urls'
 
-HOST_URL = os.environ.get('HOST_URL')
+
 ALLOWED_HOSTS = [
-    HOST_URL if HOST_URL else '127.0.0.1'
+    env.str('HOST_URL', default='127.0.0.1')
 ]
 
-DEBUG = os.environ.get('DEBUG') == 'TRUE'
+DEBUG = env.bool('DEBUG', default=True)
 
 
-DB_ENGINE = os.environ.get('DB_ENGINE')
-DB_NAME = os.environ.get('DB_NAME')
 DATABASES = {
-    'default': {
-        'ENGINE': DB_ENGINE if DB_ENGINE else 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, DB_NAME if DB_NAME else 'db.sqlite3'),
+    'default': env.dj_db_url('DATABASE_URL', 'sqlite://localhost:5432/db.sqlite3')
     }
-}
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = env.str('SECRET_KEY')
 
 TEMPLATES = [
     {
