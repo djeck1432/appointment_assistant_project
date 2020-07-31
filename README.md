@@ -51,4 +51,9 @@ DB_ENGINE - Type of database. Required to production.
 
 DB_NAME - Database name. Required to production.
 
+APP_API_ID - Telegram Client Api Id.
+
+APP_API_HASH - Telegram Client Api Hash.
+
+
 
