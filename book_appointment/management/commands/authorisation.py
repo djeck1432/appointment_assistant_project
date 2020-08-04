@@ -2,16 +2,18 @@ import re
 import asyncio
 from selenium import webdriver
 from selenium.common.exceptions import StaleElementReferenceException
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from contextlib import contextmanager
 from async_timeout import timeout
 from django.core.management.base import BaseCommand
 from book_appointment.solve_captcha import get_result_capthca
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
 
 
 URL = 'https://cgifederal.secure.force.com'
+REMOTE_SERVER_URL = 'http://127.0.0.1:4444/wd/hub'
 
 CAPTCHA_ELEMENT_ID = 'loginPage:SiteTemplate:siteLogin:loginComponent:loginForm:theId'
 EMAIL_FIELD_ELEMENT_ID = 'loginPage:SiteTemplate:siteLogin:loginComponent:loginForm:username'
@@ -32,23 +34,23 @@ class Command(BaseCommand):
         parser.add_argument('email' , help='enter email')
         parser.add_argument('password', help='enter password')
 
-
     def handle(self,*args,**options):
         email = options['email']
         password = options['password']
         captcha_queue = asyncio.Queue()
-        with start_firefox_driver() as driver:
-            driver.get(URL)
-            asyncio.run(pass_authorization_on_site(driver, email, password,captcha_queue))
+        async with timeout(WAITING_TIME) as cm:
+            with start_chrome_driver() as driver:
+                driver.get(URL)
+                asyncio.run(pass_authorization_on_site(driver, email, password,captcha_queue))
 
 
 @contextmanager
-def start_firefox_driver():
-    """Launches the Firefox driver.
+def start_chrome_driver():
+    """Launches the Chrome driver.
     At the end of the work, it closes all open windows,
     exits the browser and services, and frees up all resources.
     """
-    driver = webdriver.Firefox(executable_path='/Users/oleh_kost/Downloads/geckodriver')
+    driver = webdriver.Remote(REMOTE_SERVER_URL, DesiredCapabilities.CHROME)
     try:
         yield driver
     finally:
@@ -75,24 +77,21 @@ class SearchCaptchaDataInElement():
 
 async def get_captcha_base64_image(driver):
     """Get captcha image in base64 format.
-
     If it is not possible to find an element,
     within the timeout period, it throws a TimeoutException.
     """
-    async with timeout(WAITING_TIME) as cm:
-        wait = WebDriverWait(driver, WAITING_TIME)
+    image_element_search_pattern = SearchCaptchaDataInElement(
+            (By.ID, CAPTCHA_ELEMENT_ID),
+            REGEX_SEARCH_CAPTCHA
+        )
+    image_element = image_element_search_pattern(driver)
 
-        print(dir(driver))
-        image_element = driver.SearchCaptchaDataInElement(
-                (By.ID, CAPTCHA_ELEMENT_ID),
-                REGEX_SEARCH_CAPTCHA
-            )
+    while not image_element:
+        await asyncio.sleep(1)
+        image_element = image_element_search_pattern(driver)
 
-        _, base64_img = image_element.string.split(',')
-        # while not base64_img:
-        #         #     await asyncio.sleep(1)
-        await asyncio.sleep(2)
-        return base64_img
+    _, base64_img = image_element.string.split(',')
+    return base64_img
 
 
 async def pass_authorization_on_site(driver, email, password,captcha_queue):
@@ -104,9 +103,10 @@ async def pass_authorization_on_site(driver, email, password,captcha_queue):
     base64_img = await get_captcha_base64_image(driver)
     print('fetch image')
     await get_result_capthca(captcha_queue, base64_img)
+    print('start solve captcha')
 
     captcha_text = await captcha_queue.get()
-
+    print('solved captcha')
     email_field = driver.find_element_by_id(EMAIL_FIELD_ELEMENT_ID)
     email_field.send_keys(email)
 
@@ -123,8 +123,10 @@ async def pass_authorization_on_site(driver, email, password,captcha_queue):
 
     login_button = driver.find_element_by_id(LOGIN_BUTTON_FIELD_ID)
     login_button.click()
+    print('succeessful enter')
 
     await asyncio.sleep(60)
+
 
 
 
