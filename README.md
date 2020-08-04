@@ -43,18 +43,17 @@ There are variables available:
 
 SECRET_KEY - project secret key. Required for local and production.
 
-DEBUG - Set 'TRUE' for local development.
+DEBUG - Set 'False' to production.
 
 HOST_URL - Url host. Required to production.
 
-DB_ENGINE - Type of database. Required to production.
-
-DB_NAME - Database name. Required to production.
+DATABASE_URL - Url to use database.
 
 
 APP_API_ID - Telegram Client Api Id.
 
 APP_API_HASH - Telegram Client Api Hash.
+
 
 CAPTCHA_KEY - API key for anti-capthca.
 
@@ -67,3 +66,4 @@ Instruction, how create new client in telegram [here](https://core.telegram.org/
 ```bash
     python3 manage.py parse_tg 'test'
 ```
+
