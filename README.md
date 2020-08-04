@@ -51,9 +51,14 @@ DB_ENGINE - Type of database. Required to production.
 
 DB_NAME - Database name. Required to production.
 
+
 APP_API_ID - Telegram Client Api Id.
 
 APP_API_HASH - Telegram Client Api Hash.
 
+CAPTCHA_KEY - API key for anti-capthca.
+
+## Create Client in Telegram
+Instruction, how create new client in telegram [here](https://core.telegram.org/api/obtaining_api_id)
 
 
