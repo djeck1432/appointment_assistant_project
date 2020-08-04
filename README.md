@@ -49,6 +49,21 @@ HOST_URL - Url host. Required to production.
 
 DATABASE_URL - Url to use database.
 
+
 APP_API_ID - Telegram Client Api Id.
 
 APP_API_HASH - Telegram Client Api Hash.
+
+
+CAPTCHA_KEY - API key for anti-capthca.
+
+## Create Client in Telegram
+Instruction, how create new client in telegram [here](https://core.telegram.org/api/obtaining_api_id)
+
+
+## How can you start telegram client
+
+```bash
+    python3 manage.py parse_tg 'test'
+```
+
