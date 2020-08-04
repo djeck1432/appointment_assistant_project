@@ -1,12 +1,10 @@
 import os
 import json
-import base64
 import asks
 from dotenv import load_dotenv
 from async_timeout import timeout
-from anyio import create_task_group,run
+from anyio import create_task_group
 import asyncio
-from time import monotonic
 
 
 async def create_task_id(api_key, base64_image):
@@ -58,7 +56,6 @@ async def solve_captcha(api_key,captcha_queue,base64_image,max_time=20,response_
                 await asyncio.sleep(1)
                 result_text = await get_captcha_text(api_key, task_id)
             captcha_queue.put_nowait(result_text)
-            # return result_text
 
     except asyncio.TimeoutError:
         print('finish procces')
