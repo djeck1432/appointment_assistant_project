@@ -9,9 +9,13 @@ from contextlib import contextmanager
 from async_timeout import timeout
 from django.core.management.base import BaseCommand
 from book_appointment.solve_captcha import get_result_capthca
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+import time
 
 
 URL = 'https://cgifederal.secure.force.com'
+REMOTE_SERVER_URL = 'http://127.0.0.1:4444/wd/hub'
 
 CAPTCHA_ELEMENT_ID = 'loginPage:SiteTemplate:siteLogin:loginComponent:loginForm:theId'
 EMAIL_FIELD_ELEMENT_ID = 'loginPage:SiteTemplate:siteLogin:loginComponent:loginForm:username'
@@ -32,23 +36,22 @@ class Command(BaseCommand):
         parser.add_argument('email' , help='enter email')
         parser.add_argument('password', help='enter password')
 
-
     def handle(self,*args,**options):
         email = options['email']
         password = options['password']
         captcha_queue = asyncio.Queue()
-        with start_firefox_driver() as driver:
+        with start_chrome_driver() as driver:
             driver.get(URL)
             asyncio.run(pass_authorization_on_site(driver, email, password,captcha_queue))
 
 
 @contextmanager
-def start_firefox_driver():
-    """Launches the Firefox driver.
+def start_chrome_driver():
+    """Launches the Chrome driver.
     At the end of the work, it closes all open windows,
     exits the browser and services, and frees up all resources.
     """
-    driver = webdriver.Firefox(executable_path='/Users/oleh_kost/Downloads/geckodriver')
+    driver = webdriver.Remote(REMOTE_SERVER_URL, DesiredCapabilities.CHROME)
     try:
         yield driver
     finally:
@@ -83,10 +86,16 @@ async def get_captcha_base64_image(driver):
         wait = WebDriverWait(driver, WAITING_TIME)
 
         print(dir(driver))
-        image_element = driver.SearchCaptchaDataInElement(
+        time.sleep(3)
+
+        image_element_search_pattern = SearchCaptchaDataInElement(
                 (By.ID, CAPTCHA_ELEMENT_ID),
                 REGEX_SEARCH_CAPTCHA
             )
+        while True:
+            image_element = image_element_search_pattern(driver)
+            if image_element:
+                break
 
         _, base64_img = image_element.string.split(',')
         # while not base64_img:
@@ -103,6 +112,7 @@ async def pass_authorization_on_site(driver, email, password,captcha_queue):
 
     base64_img = await get_captcha_base64_image(driver)
     print('fetch image')
+    print(base64_img)
     await get_result_capthca(captcha_queue, base64_img)
 
     captcha_text = await captcha_queue.get()
