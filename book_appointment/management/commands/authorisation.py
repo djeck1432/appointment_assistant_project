@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from contextlib import contextmanager
+from async_timeout import timeout
 from django.core.management.base import BaseCommand
 from book_appointment.solve_captcha import get_result_capthca
 
@@ -78,20 +79,20 @@ async def get_captcha_base64_image(driver):
     If it is not possible to find an element,
     within the timeout period, it throws a TimeoutException.
     """
+    async with timeout(WAITING_TIME) as cm:
+        wait = WebDriverWait(driver, WAITING_TIME)
 
-    wait = WebDriverWait(driver, WAITING_TIME)
+        print(dir(driver))
+        image_element = driver.SearchCaptchaDataInElement(
+                (By.ID, CAPTCHA_ELEMENT_ID),
+                REGEX_SEARCH_CAPTCHA
+            )
 
-    image_element = wait.until(
-        SearchCaptchaDataInElement(
-            (By.ID, CAPTCHA_ELEMENT_ID),
-            REGEX_SEARCH_CAPTCHA
-        )
-    )
-    _, base64_img = image_element.string.split(',')
-    while not base64_img:
-        await asyncio.sleep(1)
-
-    return base64_img
+        _, base64_img = image_element.string.split(',')
+        # while not base64_img:
+        #         #     await asyncio.sleep(1)
+        await asyncio.sleep(2)
+        return base64_img
 
 
 async def pass_authorization_on_site(driver, email, password,captcha_queue):
@@ -101,6 +102,7 @@ async def pass_authorization_on_site(driver, email, password,captcha_queue):
     """
 
     base64_img = await get_captcha_base64_image(driver)
+    print('fetch image')
     await get_result_capthca(captcha_queue, base64_img)
 
     captcha_text = await captcha_queue.get()
