@@ -35,7 +35,10 @@ class Command(BaseCommand):
     def handle(self,*args,**options):
         email = options['email']
         password = options['password']
-        asyncio.run(authorisation(email,password))
+        captcha_queue = asyncio.Queue()
+        with start_firefox_driver() as driver:
+            driver.get(URL)
+            asyncio.run(pass_authorization_on_site(driver, email, password,captcha_queue))
 
 
 @contextmanager
@@ -69,35 +72,39 @@ class SearchCaptchaDataInElement():
             return False
 
 
-async def get_captcha_base64_image(url):
+async def get_captcha_base64_image(driver):
     """Get captcha image in base64 format.
 
     If it is not possible to find an element,
     within the timeout period, it throws a TimeoutException.
     """
-    with start_firefox_driver() as driver:
-        driver.get(url)
 
-        wait = WebDriverWait(driver, WAITING_TIME)
+    wait = WebDriverWait(driver, WAITING_TIME)
 
-        image_element = wait.until(
-            SearchCaptchaDataInElement(
-                (By.ID, CAPTCHA_ELEMENT_ID),
-                REGEX_SEARCH_CAPTCHA
-            )
+    image_element = wait.until(
+        SearchCaptchaDataInElement(
+            (By.ID, CAPTCHA_ELEMENT_ID),
+            REGEX_SEARCH_CAPTCHA
         )
+    )
+    _, base64_img = image_element.string.split(',')
+    while not base64_img:
+        await asyncio.sleep(1)
 
-        _, base64_img = image_element.string.split(',')
-
-        await asyncio.sleep(WAITING_TIME)
-    return base64_img,driver
+    return base64_img
 
 
-async def pass_authorization_on_site(driver, email, password, captcha_symbols):
+async def pass_authorization_on_site(driver, email, password,captcha_queue):
     """Make authorization on the site.
     Enter the necessary credentials, such as login, password
     and captcha for authorization on the site.
     """
+
+    base64_img = await get_captcha_base64_image(driver)
+    await get_result_capthca(captcha_queue, base64_img)
+
+    captcha_text = await captcha_queue.get()
+
     email_field = driver.find_element_by_id(EMAIL_FIELD_ELEMENT_ID)
     email_field.send_keys(email)
 
@@ -110,30 +117,12 @@ async def pass_authorization_on_site(driver, email, password, captcha_symbols):
     privacy_statement_checkbox.click()
 
     captcha_field = driver.find_element_by_id(CAPTCHA_FIELD_ELEMENT_ID)
-    captcha_field.send_keys(captcha_symbols)
+    captcha_field.send_keys(captcha_text)
 
     login_button = driver.find_element_by_id(LOGIN_BUTTON_FIELD_ID)
     login_button.click()
 
-    # Checking for the presence of an authorized user element
-    # TODO Change to asynchronous wait
-    wait = WebDriverWait(driver, WAITING_TIME)
-    authorized_user_element = wait.until(
-        ec.presence_of_element_located(
-            (By.XPATH, AUTHORIZED_USER_ELEMENT_XPATH)
-        )
-    )
+    await asyncio.sleep(60)
 
-async def authorisation(email,password):
-    captcha_queue = asyncio.Queue()
-
-    captcha_base64_image,driver = await get_captcha_base64_image(URL)
-    print('fetch image')
-    await get_result_capthca(captcha_queue, captcha_base64_image)
-    print('solve capthca')
-    captcha_text = await captcha_queue.get()
-    print('start authorisation')
-    await pass_authorization_on_site(driver, email, password, captcha_text)
-    print('end')
 
 
