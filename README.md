@@ -62,3 +62,8 @@ CAPTCHA_KEY - API key for anti-capthca.
 Instruction, how create new client in telegram [here](https://core.telegram.org/api/obtaining_api_id)
 
 
+## How can you start telegram client
+
+```bash
+    python3 manage.py parse_tg 'test'
+```
