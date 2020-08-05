@@ -38,6 +38,7 @@ class Command(BaseCommand):
         email = options['email']
         password = options['password']
         captcha_queue = asyncio.Queue()
+
         async with timeout(WAITING_TIME) as cm:
             with start_chrome_driver() as driver:
                 driver.get(URL)
@@ -86,9 +87,21 @@ async def get_captcha_base64_image(driver):
         )
     image_element = image_element_search_pattern(driver)
 
+
     while not image_element:
         await asyncio.sleep(1)
         image_element = image_element_search_pattern(driver)
+
+        time.sleep(3)
+
+        image_element_search_pattern = SearchCaptchaDataInElement(
+                (By.ID, CAPTCHA_ELEMENT_ID),
+                REGEX_SEARCH_CAPTCHA
+            )
+        while True:
+            image_element = image_element_search_pattern(driver)
+            if image_element:
+                break
 
     _, base64_img = image_element.string.split(',')
     return base64_img
@@ -102,6 +115,7 @@ async def pass_authorization_on_site(driver, email, password,captcha_queue):
 
     base64_img = await get_captcha_base64_image(driver)
     print('fetch image')
+    print(base64_img)
     await get_result_capthca(captcha_queue, base64_img)
     print('start solve captcha')
 
